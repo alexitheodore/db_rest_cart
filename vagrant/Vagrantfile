@@ -1,0 +1,26 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.box_url = "http://files.vagrantup.com/precise64.box"
+  
+  # config.vm.network :private_network, ip: "192.168.20.3"
+  config.vm.define :"db_rest_cart"
+  
+  config.vm.synced_folder "config_presets/", "/var/setup"
+  config.vm.synced_folder "../www/", "/www", mount_options: ["dmode=775,fmode=664"]
+  config.vm.synced_folder "../dbAPI/", "/dbAPI", mount_options: ["dmode=775,fmode=664"]
+  config.vm.synced_folder "../security", "/www/security", mount_options: ["dmode=775,fmode=664"] #this probably needs some permissions
+  config.vm.network :forwarded_port, guest: 5432, host: 5555
+
+  # this adds the host user's key to the VM
+  ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
+  config.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /home/ubuntu/.ssh/authorized_keys", privileged: false
+
+  config.vm.provision :shell, :path => "install.sh"
+
+end
